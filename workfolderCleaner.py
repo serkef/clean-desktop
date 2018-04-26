@@ -68,9 +68,7 @@ def archiveDesktopItems(fromPath, toPath, exceptions):
    itemsToArchive = [i for i in glob(os.path.join(fromPath, '*')) if i not in exceptions]
    superArchive(sources=itemsToArchive, destination=toPath)
 
-
-if __name__ == '__main__':
-
+def main():
    # Archive old folders
    archiveDailyWorkfolders(dirsFromPath=wfPath, archivePath=archivePath)
 
@@ -82,3 +80,8 @@ if __name__ == '__main__':
 
    # Clean Desktop
    archiveDesktopItems(fromPath=desktopPath, toPath=todayPath, exceptions=desktopExceptions)
+
+
+
+if __name__ == '__main__':
+    main()
