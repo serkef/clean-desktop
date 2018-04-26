@@ -28,7 +28,7 @@ def superArchive(sources, destination):
    for source in sources:
       with ignored(OSError):
          shutil.move(source, destination)
-         print 'Archived %s to %s' % (source, destination)
+         print('Archived %s to %s' % (source, destination))
 
 
 def isOldDirectory(path):
@@ -53,14 +53,14 @@ def removeEmptyFolders(fromPath):
    for dir in os.listdir(fromPath):
       with ignored(OSError):
          os.removedirs(os.path.join(fromPath, dir))
-         print 'Deleted empty dir: %s' % (dir)
+         print('Deleted empty dir: %s' % (dir))
 
 
 def createDirectory(directory):
    """Creates directory given its full path. Ignores OSError exceptions."""
    with ignored(OSError):
       os.makedirs(directory)
-      print 'Created dir: %s' % (directory)
+      print('Created dir: %s' % (directory))
 
 
 def archiveDesktopItems(fromPath, toPath, exceptions):
