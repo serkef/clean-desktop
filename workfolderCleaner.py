@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int) -> None:
-    """Archives all directories in workfolder to workfolder_archive, as long as their modification date
-    was prior to cutoff limit."""
+    """Archives all directories in workfolder to workfolder_archive,
+    as long as their modification date was prior to cutoff limit."""
     for dir in workfolder.iterdir():
         modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(dir))
         if (datetime.date.today() - modifDate.date()).days > cutoff_limit:
@@ -16,7 +16,7 @@ def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int
 
 
 def remove_empty_folders(workfolder: Path) -> None:
-    """Deletes any empty folder in provided path. Ignores OSError exceptions."""
+    """Deletes any empty folder in provided path. Ignores OSError."""
     for dir in workfolder.iterdir():
         try:
             dir.rmdir()
@@ -26,7 +26,7 @@ def remove_empty_folders(workfolder: Path) -> None:
 
 
 def create_directory(directory: Path) -> None:
-    """Creates directory given its full path. Ignores FileExistsError exceptions."""
+    """Creates directory given its full path. Ignores FileExistsError."""
     try:
         directory.mkdir()
         print('Created dir: %s' % (directory))
@@ -41,18 +41,20 @@ def archive_desktop_items(desktop: Path, workfolder: Path, exceptions: List[Path
 
 
 def main():
-    desc = '''Workfolder & Desktop Cleaner\nArchives your desktop files to the last day Workfolder, 
-    creates a new Workfolder and archives old workfolders that exceed the cutoff limit.'''
+    desc = '''Workfolder & Desktop Cleaner\nArchives your desktop files to the 
+    last day Workfolder, creates a new Workfolder and archives old workfolders 
+    that exceed the cutoff limit.'''
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument(
         '-workfolder',
-        help="Main Workfolder. One subdirectory will be created, every day this script is run.",
+        help="Main Workfolder. One subdirectory will be created, in every run.",
         type=Path
     )
     parser.add_argument(
         '-archive',
-        help="Archive directory name. Will be a subdirectory of Workfolder. Defaults to ARCHIVE.",
+        help="Archive directory name. Will be a subdirectory of Workfolder. "
+             "Defaults to ARCHIVE.",
         default='ARCHIVE',
         type=str
     )
@@ -63,14 +65,16 @@ def main():
     )
     parser.add_argument(
         '-cutoff',
-        help="Cutoff limit in days. Any directory with modification date prior to this will be moved to archive. "
+        help="Cutoff limit in days. Any directory with modification date prior "
+             "to this will be moved to archive. "
              "Defaults to 30 days.",
         default=30,
         type=int
     )
     parser.add_argument(
         '-ds_fmt',
-        help="Datestamp format for workfolder created directory. Defaults to: '%%Y-%%m-%%d'",
+        help="Datestamp format for workfolder created directory. Defaults to: "
+             "'%%Y-%%m-%%d'",
         default='%Y-%m-%d',
         type=str
     )
@@ -91,7 +95,8 @@ def main():
     workfolder_today = workfolder / datetime.date.today().strftime(ds_fmt)
 
     # Archive old folders
-    archive_daily_workfolders(workfolder=workfolder, archive=workfolder_archive, cutoff_limit=cutoff_limit)
+    archive_daily_workfolders(workfolder=workfolder, archive=workfolder_archive,
+                              cutoff_limit=cutoff_limit)
 
     # Delete empty folders
     remove_empty_folders(workfolder=workfolder)
@@ -100,7 +105,8 @@ def main():
     create_directory(directory=workfolder_today)
 
     # Clean Desktop
-    archive_desktop_items(desktop=desktop, workfolder=workfolder_today, exceptions=desktop_exceptions)
+    archive_desktop_items(desktop=desktop, workfolder=workfolder_today,
+                          exceptions=desktop_exceptions)
 
 
 if __name__ == '__main__':
