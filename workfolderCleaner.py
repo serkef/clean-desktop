@@ -6,13 +6,13 @@ from contextlib import contextmanager
 from glob import glob
 
 # Setup path
-wfPath = os.path.realpath('')
-archivePath = os.path.join(wfPath, 'ARCHIVE')
-dayLimit = 30
-folderFormat = '%Y-%m-%d'
-desktopPath = os.path.realpath('')
-desktopExceptions = ['']
-todayPath = os.path.join(wfPath, str(datetime.date.today().strftime(folderFormat)))
+cutoff_limit = 30
+ts_format = '%Y-%m-%d'
+desktop = os.path.realpath('')
+desktop_exceptions = ['']
+workfolder = os.path.realpath('')
+workfolder_archive = os.path.join(workfolder, 'ARCHIVE')
+workfolder_today = os.path.join(workfolder, str(datetime.date.today().strftime(ts_format)))
 
 
 @contextmanager
@@ -23,7 +23,7 @@ def ignored(*exceptions):
         pass
 
 
-def superArchive(sources, destination):
+def super_archive(sources, destination):
     """Moves all directories in sources to destination. Ignores OSError exceptions."""
     for source in sources:
         with ignored(OSError):
@@ -31,24 +31,24 @@ def superArchive(sources, destination):
             print('Archived %s to %s' % (source, destination))
 
 
-def isOldDirectory(path):
+def is_old_directory(path):
     """Returns True if path was last modified > 30 days ago. False otherwise."""
     if not isdir(path):
         return False
     else:
         with ignored(OSError):
             modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(path))
-            return (datetime.date.today() - modifDate.date()).days > dayLimit
+            return (datetime.date.today() - modifDate.date()).days > cutoff_limit
 
 
-def archiveDailyWorkfolders(dirsFromPath, archivePath):
-    """Archives all directories in dirsFromPath to archivePath, as long as their modification date
-    was prior to dayLimit global var"""
-    dirs = [d for d in glob(os.path.join(dirsFromPath, '*')) if isOldDirectory(path=d)]
-    superArchive(sources=dirs, destination=archivePath)
+def archive_daily_workfolders(dirsFromPath, archivePath):
+    """Archives all directories in dirsFromPath to workfolder_archive, as long as their modification date
+    was prior to cutoff_limit global var"""
+    dirs = [d for d in glob(os.path.join(dirsFromPath, '*')) if is_old_directory(path=d)]
+    super_archive(sources=dirs, destination=archivePath)
 
 
-def removeEmptyFolders(fromPath):
+def remove_empty_folders(fromPath):
     """Deletes any empty folder in provided path. Ignores OSError exceptions."""
     for dir in os.listdir(fromPath):
         with ignored(OSError):
@@ -56,31 +56,31 @@ def removeEmptyFolders(fromPath):
             print('Deleted empty dir: %s' % (dir))
 
 
-def createDirectory(directory):
+def create_directory(directory):
     """Creates directory given its full path. Ignores OSError exceptions."""
     with ignored(OSError):
         os.makedirs(directory)
         print('Created dir: %s' % (directory))
 
 
-def archiveDesktopItems(fromPath, toPath, exceptions):
+def archive_desktop_items(fromPath, toPath, exceptions):
     """Archives any item from fromPath to toPath, unless in exceptions"""
     itemsToArchive = [i for i in glob(os.path.join(fromPath, '*')) if i not in exceptions]
-    superArchive(sources=itemsToArchive, destination=toPath)
+    super_archive(sources=itemsToArchive, destination=toPath)
 
 
 def main():
     # Archive old folders
-    archiveDailyWorkfolders(dirsFromPath=wfPath, archivePath=archivePath)
+    archive_daily_workfolders(dirsFromPath=workfolder, archivePath=workfolder_archive)
 
     # Delete empty folders
-    removeEmptyFolders(fromPath=wfPath)
+    remove_empty_folders(fromPath=workfolder)
 
     # Create Dir for Today
-    createDirectory(directory=todayPath)
+    create_directory(directory=workfolder_today)
 
     # Clean Desktop
-    archiveDesktopItems(fromPath=desktopPath, toPath=todayPath, exceptions=desktopExceptions)
+    archive_desktop_items(fromPath=desktop, toPath=workfolder_today, exceptions=desktop_exceptions)
 
 
 if __name__ == '__main__':
