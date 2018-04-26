@@ -1,4 +1,5 @@
 import os
+import logging
 import datetime
 import argparse
 from typing import List
@@ -17,21 +18,23 @@ def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int
 
 def remove_empty_folders(workfolder: Path) -> None:
     """Deletes any empty folder in provided path. Ignores OSError."""
+    logger = logging.getLogger(__name__ + 'remove_empty_folders')
     for dir in workfolder.iterdir():
         try:
             dir.rmdir()
-            print('Deleted empty dir: %s' % (dir))
+            logger.info('Deleted empty dir: {}'.format(dir))
         except OSError:
             pass
 
 
 def create_directory(directory: Path) -> None:
     """Creates directory given its full path. Ignores FileExistsError."""
+    logger = logging.getLogger(__name__ + 'create_directory')
     try:
         directory.mkdir()
-        print('Created dir: %s' % (directory))
+        logger.info('Created dir: {}'.format(directory))
     except FileExistsError:
-        pass
+        logger.info('Already exists: {}'.format(directory))
 
 
 def archive_desktop_items(desktop: Path, workfolder: Path, exceptions: List[Path]) -> None:
