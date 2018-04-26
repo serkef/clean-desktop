@@ -5,6 +5,7 @@ import shutil
 from contextlib import contextmanager
 from glob import glob
 import argparse
+from typing import List
 from pathlib import Path
 
 
@@ -16,7 +17,7 @@ def ignored(*exceptions):
         pass
 
 
-def super_archive(sources, destination):
+def super_archive(sources: List[str], destination: str) -> None:
     """Moves all directories in sources to destination. Ignores OSError exceptions."""
     for source in sources:
         with ignored(OSError):
@@ -24,7 +25,7 @@ def super_archive(sources, destination):
             print('Archived %s to %s' % (source, destination))
 
 
-def is_old_directory(path, cutoff_limit):
+def is_old_directory(path: str, cutoff_limit: int) -> bool:
     """Returns True if path was last modified > 30 days ago. False otherwise."""
     if not isdir(path):
         return False
@@ -34,14 +35,14 @@ def is_old_directory(path, cutoff_limit):
             return (datetime.date.today() - modifDate.date()).days > cutoff_limit
 
 
-def archive_daily_workfolders(dirsFromPath, archivePath, cutoff_limit):
+def archive_daily_workfolders(dirsFromPath: str, archivePath: str, cutoff_limit: int) -> None:
     """Archives all directories in dirsFromPath to workfolder_archive, as long as their modification date
     was prior to cutoff_limit global var"""
     dirs = [d for d in glob(os.path.join(dirsFromPath, '*')) if is_old_directory(path=d, cutoff_limit=cutoff_limit)]
     super_archive(sources=dirs, destination=archivePath)
 
 
-def remove_empty_folders(fromPath):
+def remove_empty_folders(fromPath: str) -> None:
     """Deletes any empty folder in provided path. Ignores OSError exceptions."""
     for dir in os.listdir(fromPath):
         with ignored(OSError):
@@ -49,14 +50,14 @@ def remove_empty_folders(fromPath):
             print('Deleted empty dir: %s' % (dir))
 
 
-def create_directory(directory):
+def create_directory(directory: str) -> None:
     """Creates directory given its full path. Ignores OSError exceptions."""
     with ignored(OSError):
         os.makedirs(directory)
         print('Created dir: %s' % (directory))
 
 
-def archive_desktop_items(fromPath, toPath, exceptions):
+def archive_desktop_items(fromPath: str, toPath: str, exceptions: List[str]):
     """Archives any item from fromPath to toPath, unless in exceptions"""
     itemsToArchive = [i for i in glob(os.path.join(fromPath, '*')) if i not in exceptions]
     super_archive(sources=itemsToArchive, destination=toPath)
@@ -106,7 +107,7 @@ def main():
 
     workfolder = str(args.workfolderf)
     workfolder_archive = os.path.join(workfolder, args.archive)
-    cutoff_limit = str(args.cutoff_limit)
+    cutoff_limit = args.cutoff_limit
     ds_fmt = str(args.ds_fmt)
     desktop = str(args.desktop)
     desktop_exceptions = args.exceptions.split(',')
