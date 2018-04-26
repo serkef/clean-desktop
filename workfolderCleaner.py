@@ -36,13 +36,12 @@ def archive_desktop_items(fromPath: Path, toPath: Path, exceptions: List[Path]):
 
 
 def main():
-    desc = '''Workfolder & Desktop Cleaner
-    Archives your desktop files to the last day Workfolder, creates a new Workfolder and archives old workfolders
-    that exceed the cutoff limit.'''
+    desc = '''Workfolder & Desktop Cleaner\nArchives your desktop files to the last day Workfolder, 
+    creates a new Workfolder and archives old workfolders that exceed the cutoff limit.'''
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument(
-        '-workfolderf',
+        '-workfolder',
         help="Main Workfolder. One subdirectory will be created, every day this script is run.",
         type=Path
     )
@@ -66,7 +65,7 @@ def main():
     )
     parser.add_argument(
         '-ds_fmt',
-        help="Datestamp format for workfolder created directory. Defaults to: '%Y-%m-%d'",
+        help="Datestamp format for workfolder created directory. Defaults to: '%%Y-%%m-%%d'",
         default='%Y-%m-%d',
         type=int
     )
@@ -77,7 +76,7 @@ def main():
     )
     args = parser.parse_args()
 
-    workfolder = args.workfolderf
+    workfolder = args.workfolder
     workfolder_archive = workfolder / args.archive
     cutoff_limit = args.cutoff_limit
     ds_fmt = args.ds_fmt
