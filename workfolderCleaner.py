@@ -5,28 +5,33 @@ from typing import List
 from pathlib import Path
 
 
-def archive_daily_workfolders(dirsFromPath: Path, archivePath: Path, cutoff_limit: int) -> None:
-    """Archives all directories in dirsFromPath to workfolder_archive, as long as their modification date
+def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int) -> None:
+    """Archives all directories in workfolder to workfolder_archive, as long as their modification date
     was prior to cutoff_limit global var"""
-    for dir in dirsFromPath.iterdir():
+    for dir in workfolder.iterdir():
         modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(dir))
         if (datetime.date.today() - modifDate.date()).days > cutoff_limit:
-            dir.rename(archivePath / dir.name)
-            print('Archived %s to %s' % (dir, archivePath))
+            dir.rename(archive / dir.name)
+            print('Archived %s to %s' % (dir, archive))
 
 
-def remove_empty_folders(fromPath: Path) -> None:
+def remove_empty_folders(workfolder: Path) -> None:
     """Deletes any empty folder in provided path. Ignores OSError exceptions."""
-    for dir in fromPath.iterdir():
-        dir.rmdir()
-        print('Deleted empty dir: %s' % (dir))
+    for dir in workfolder.iterdir():
+        try:
+            dir.rmdir()
+            print('Deleted empty dir: %s' % (dir))
+        except OSError:
+            pass
 
 
 def create_directory(directory: Path) -> None:
     """Creates directory given its full path. Ignores OSError exceptions."""
-    # TODO add exception handling
-    directory.mkdir()
-    print('Created dir: %s' % (directory))
+    try:
+        directory.mkdir()
+        print('Created dir: %s' % (directory))
+    except FileExistsError:
+        pass
 
 
 def archive_desktop_items(fromPath: Path, toPath: Path, exceptions: List[Path]):
@@ -86,10 +91,10 @@ def main():
     workfolder_today = workfolder / str(datetime.date.today().strftime(ds_fmt))
 
     # Archive old folders
-    archive_daily_workfolders(dirsFromPath=workfolder, archivePath=workfolder_archive, cutoff_limit=cutoff_limit)
+    archive_daily_workfolders(workfolder=workfolder, archive=workfolder_archive, cutoff_limit=cutoff_limit)
 
     # Delete empty folders
-    remove_empty_folders(fromPath=workfolder)
+    remove_empty_folders(workfolder=workfolder)
 
     # Create Dir for Today
     create_directory(directory=workfolder_today)
