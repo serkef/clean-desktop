@@ -67,18 +67,19 @@ def main():
         '-ds_fmt',
         help="Datestamp format for workfolder created directory. Defaults to: '%%Y-%%m-%%d'",
         default='%Y-%m-%d',
-        type=int
+        type=str
     )
     parser.add_argument(
         '-exceptions',
         help="Except desktop files list. files seperated with comma",
+        default='',
         type=str
     )
     args = parser.parse_args()
 
     workfolder = args.workfolder
     workfolder_archive = workfolder / args.archive
-    cutoff_limit = args.cutoff_limit
+    cutoff_limit = args.cutoff
     ds_fmt = args.ds_fmt
     desktop = args.desktop
     desktop_exceptions = args.exceptions.split(',')
