@@ -3,45 +3,7 @@ import shutil
 import logging
 import datetime
 import argparse
-from typing import List
 from pathlib import Path
-
-
-def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int) -> None:
-    """Archives all directories in workfolder to workfolder_archive,
-    as long as their modification date was prior to cutoff limit."""
-    for dir in workfolder.iterdir():
-        modif_date = datetime.datetime.fromtimestamp(os.path.getmtime(dir))
-        if (datetime.date.today() - modif_date.date()).days > cutoff_limit:
-            dir.rename(archive / dir.name)
-            print('Archived %s to %s' % (dir, archive))
-
-
-def remove_empty_folders(workfolder: Path) -> None:
-    """Deletes any empty folder in provided path. Ignores OSError."""
-    logger = logging.getLogger(__name__ + 'remove_empty_folders')
-    for folder in workfolder.iterdir():
-        try:
-            folder.rmdir()
-            logger.info('Deleted empty dir: {}'.format(folder))
-        except OSError:
-            pass
-
-
-def create_directory(directory: Path) -> None:
-    """Creates directory given its full path. Ignores FileExistsError."""
-    logger = logging.getLogger(__name__ + 'create_directory')
-    try:
-        directory.mkdir()
-        logger.info('Created dir: {}'.format(directory))
-    except FileExistsError:
-        logger.info('Already exists: {}'.format(directory))
-
-
-def archive_desktop_items(desktop: Path, workfolder: Path, exceptions: List[Path]) -> None:
-    """Archives any item from desktop to workfolder, unless in exceptions"""
-    for item in (i for i in desktop.glob('*') if i.name not in exceptions):
-        shutil.move(str(item), str(workfolder / item.name))
 
 
 def main():
@@ -51,24 +13,26 @@ def main():
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument(
-        '-workfolder',
+        "-workfolder",
         help="Main Workfolder. One subdirectory will be created, in every run.",
+        required=True,
         type=Path
     )
     parser.add_argument(
-        '-archive',
+        "-archive",
         help="Archive directory name. Will be a subdirectory of Workfolder. "
              "Defaults to ARCHIVE.",
-        default='ARCHIVE',
+        default="ARCHIVE",
         type=str
     )
     parser.add_argument(
-        '-desktop',
+        "-desktop",
         help="Desktop directory. Files will be moved from there to Workfolder.",
+        required=True,
         type=Path
     )
     parser.add_argument(
-        '-cutoff',
+        "-cutoff",
         help="Cutoff limit in days. Any directory with modification date prior "
              "to this will be moved to archive. "
              "Defaults to 30 days.",
@@ -76,16 +40,16 @@ def main():
         type=int
     )
     parser.add_argument(
-        '-ds_fmt',
+        "-ds_fmt",
         help="Date format for workfolder created directory. Defaults to: "
              "'%%Y-%%m-%%d'",
-        default='%Y-%m-%d',
+        default="%Y-%m-%d",
         type=str
     )
     parser.add_argument(
-        '-exceptions',
+        "-exceptions",
         help="Except desktop files list. files separated with comma",
-        default='',
+        default="",
         type=str
     )
     args = parser.parse_args()
@@ -93,25 +57,46 @@ def main():
     cutoff_limit = args.cutoff
     ds_fmt = args.ds_fmt
     desktop = args.desktop
-    desktop_exceptions = args.exceptions.split(',')
+    desktop_exceptions = args.exceptions.split(",")
     workfolder = args.workfolder
     workfolder_archive = workfolder / args.archive
     workfolder_today = workfolder / datetime.date.today().strftime(ds_fmt)
 
+    # configure logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     # Archive old folders
-    archive_daily_workfolders(workfolder=workfolder, archive=workfolder_archive,
-                              cutoff_limit=cutoff_limit)
+    for folder in workfolder.iterdir():
+        modified_at = datetime.datetime.fromtimestamp(os.path.getmtime(folder))
+        if (datetime.date.today() - modified_at.date()).days > cutoff_limit:
+            folder.rename(workfolder_archive / folder.name)
+            logging.info("Archived %s to %s" % (folder, workfolder_archive))
 
     # Delete empty folders
-    remove_empty_folders(workfolder=workfolder)
+    for folder in workfolder.iterdir():
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+        else:
+            logging.info("Deleted empty folder: {}".format(folder))
 
     # Create Dir for Today
-    create_directory(directory=workfolder_today)
+    try:
+        workfolder_today.mkdir()
+    except FileExistsError:
+        logging.info("Already exists: {}".format(workfolder_today))
+    else:
+        logging.info("Created folder: {}".format(workfolder_today))
 
     # Clean Desktop
-    archive_desktop_items(desktop=desktop, workfolder=workfolder_today,
-                          exceptions=desktop_exceptions)
+    for item in (i for i in desktop.glob("*") if i.name not in desktop_exceptions):
+        logging.info("Moving %r to %r", item.name, str(workfolder_today))
+        try:
+            shutil.move(str(item), str(workfolder_today))
+        except (OSError, shutil.Error):
+            logging.warning("Failed to move %s", item, exc_info=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
