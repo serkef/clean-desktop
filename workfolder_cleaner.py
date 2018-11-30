@@ -1,4 +1,5 @@
 import os
+import shutil
 import logging
 import datetime
 import argparse
@@ -10,8 +11,8 @@ def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int
     """Archives all directories in workfolder to workfolder_archive,
     as long as their modification date was prior to cutoff limit."""
     for dir in workfolder.iterdir():
-        modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(dir))
-        if (datetime.date.today() - modifDate.date()).days > cutoff_limit:
+        modif_date = datetime.datetime.fromtimestamp(os.path.getmtime(dir))
+        if (datetime.date.today() - modif_date.date()).days > cutoff_limit:
             dir.rename(archive / dir.name)
             print('Archived %s to %s' % (dir, archive))
 
@@ -19,10 +20,10 @@ def archive_daily_workfolders(workfolder: Path, archive: Path, cutoff_limit: int
 def remove_empty_folders(workfolder: Path) -> None:
     """Deletes any empty folder in provided path. Ignores OSError."""
     logger = logging.getLogger(__name__ + 'remove_empty_folders')
-    for dir in workfolder.iterdir():
+    for folder in workfolder.iterdir():
         try:
-            dir.rmdir()
-            logger.info('Deleted empty dir: {}'.format(dir))
+            folder.rmdir()
+            logger.info('Deleted empty dir: {}'.format(folder))
         except OSError:
             pass
 
@@ -40,7 +41,7 @@ def create_directory(directory: Path) -> None:
 def archive_desktop_items(desktop: Path, workfolder: Path, exceptions: List[Path]) -> None:
     """Archives any item from desktop to workfolder, unless in exceptions"""
     for item in (i for i in desktop.glob('*') if i.name not in exceptions):
-        item.rename(workfolder / item.name)
+        shutil.move(str(item), str(workfolder / item.name))
 
 
 def main():
@@ -76,14 +77,14 @@ def main():
     )
     parser.add_argument(
         '-ds_fmt',
-        help="Datestamp format for workfolder created directory. Defaults to: "
+        help="Date format for workfolder created directory. Defaults to: "
              "'%%Y-%%m-%%d'",
         default='%Y-%m-%d',
         type=str
     )
     parser.add_argument(
         '-exceptions',
-        help="Except desktop files list. files seperated with comma",
+        help="Except desktop files list. files separated with comma",
         default='',
         type=str
     )
