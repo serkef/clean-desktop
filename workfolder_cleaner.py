@@ -1,8 +1,8 @@
 import os
 import shutil
 import logging
-import datetime
 import argparse
+import datetime as dt
 from pathlib import Path
 
 
@@ -26,12 +26,6 @@ def main():
         type=str
     )
     parser.add_argument(
-        "-desktop",
-        help="Desktop directory. Files will be moved from there to Workfolder.",
-        required=True,
-        type=Path
-    )
-    parser.add_argument(
         "-cutoff",
         help="Cutoff limit in days. Any directory with modification date prior "
              "to this will be moved to archive. "
@@ -47,55 +41,68 @@ def main():
         type=str
     )
     parser.add_argument(
-        "-exceptions",
-        help="Except desktop files list. files separated with comma",
-        default="",
-        type=str
+        "-rel_link",
+        help="Will create relative link for today in Workfolder path",
+        default=True,
+        type=bool
     )
     args = parser.parse_args()
 
     cutoff_limit = args.cutoff
     ds_fmt = args.ds_fmt
-    desktop = args.desktop
-    desktop_exceptions = args.exceptions.split(",")
     workfolder = args.workfolder
     workfolder_archive = workfolder / args.archive
-    workfolder_today = workfolder / datetime.date.today().strftime(ds_fmt)
+    workfolder_today = workfolder / dt.date.today().strftime(ds_fmt)
+    link_workfolder_today = workfolder / 'today'
 
     # configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # Archive old folders
+    workfolder_archive.mkdir(exist_ok=True)
     for folder in workfolder.iterdir():
-        modified_at = datetime.datetime.fromtimestamp(os.path.getmtime(folder))
-        if (datetime.date.today() - modified_at.date()).days > cutoff_limit:
+        modified_at = dt.datetime.fromtimestamp(os.path.getmtime(folder))
+        if (dt.date.today() - modified_at.date()).days > cutoff_limit:
             folder.rename(workfolder_archive / folder.name)
-            logging.info("Archived %s to %s" % (folder, workfolder_archive))
+            logging.info("Archived %s to %s", folder, workfolder_archive)
 
     # Delete empty folders
     for folder in workfolder.iterdir():
+        if folder == workfolder_today or folder == workfolder_archive:
+            continue
         try:
             folder.rmdir()
         except OSError:
             pass
         else:
-            logging.info("Deleted empty folder: {}".format(folder))
+            logging.info("Deleted empty folder: %s", folder)
 
     # Create Dir for Today
-    try:
-        workfolder_today.mkdir()
-    except FileExistsError:
-        logging.info("Already exists: {}".format(workfolder_today))
-    else:
-        logging.info("Created folder: {}".format(workfolder_today))
+    workfolder_today.mkdir(exist_ok=True)
 
-    # Clean Desktop
-    for item in (i for i in desktop.glob("*") if i.name not in desktop_exceptions):
-        logging.info("Moving %r to %r", item.name, str(workfolder_today))
+    # Create home link
+    if args.rel_link:
         try:
-            shutil.move(str(item), str(workfolder_today))
-        except (OSError, shutil.Error):
-            logging.warning("Failed to move %s", item, exc_info=True)
+            os.symlink(workfolder_today, link_workfolder_today)
+        except FileExistsError:
+            pass
+        except OSError:
+            logging.warning("Failed to create link: %s", link_workfolder_today, exc_info=True)
+        else:
+            logging.info("Created link: %s", link_workfolder_today)
+
+    # Clean Workfolder
+    for item in workfolder.glob("*"):
+        if item == link_workfolder_today or item == workfolder_archive:
+            continue
+        # If parse date, then should not move.
+        try:
+            dt.datetime.strptime(item.name, ds_fmt)
+        except ValueError:
+            pass
+        else:
+            continue
+        shutil.move(str(item), str(workfolder_today))
 
 
 if __name__ == "__main__":
