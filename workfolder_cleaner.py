@@ -83,9 +83,11 @@ def main():
     # Create home link
     if args.rel_link:
         try:
-            os.symlink(workfolder_today, link_workfolder_today)
-        except FileExistsError:
+            os.unlink(link_workfolder_today)
+        except FileNotFoundError:
             pass
+        try:
+            os.symlink(workfolder_today, link_workfolder_today)
         except OSError:
             logging.warning("Failed to create link: %s", link_workfolder_today, exc_info=True)
         else:
