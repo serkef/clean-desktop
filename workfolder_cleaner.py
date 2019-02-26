@@ -4,6 +4,16 @@ import logging
 import argparse
 import datetime as dt
 from pathlib import Path
+from contextlib import suppress
+
+
+def safe_directory_name(string: str):
+    """Checks if a string can be used as a directory name"""
+    safe_characters = {'.', ',', '+', '-', '_', ' '}
+    for char in string:
+        if not char.isalnum() and char not in safe_characters:
+            return False
+    return True
 
 
 def main():
@@ -24,6 +34,14 @@ def main():
              "Defaults to ARCHIVE.",
         default="ARCHIVE",
         type=str
+    )
+    parser.add_argument(
+        "-clean_folders",
+        help="Directories that will be cleaned in each run. Contents will be moved to "
+             "daily workfolder.",
+        default=[],
+        nargs='*',
+        type=Path
     )
     parser.add_argument(
         "-cutoff",
@@ -50,17 +68,23 @@ def main():
 
     cutoff_limit = args.cutoff
     ds_fmt = args.ds_fmt
-    workfolder = args.workfolder
+    workfolder = args.workfolder.expanduser()
+    workfolder_archive = args.archive
+    if not safe_directory_name(workfolder_archive):
+        raise ValueError(f"Archive folder cannot be named {workfolder_archive!r}")
     workfolder_archive = workfolder / args.archive
     workfolder_today = workfolder / dt.date.today().strftime(ds_fmt)
     link_workfolder_today = workfolder / 'today'
+    clean_folders = (folder.expanduser() for folder in args.clean_folders)
 
     # configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # Archive old folders
-    workfolder_archive.mkdir(exist_ok=True)
+    workfolder_archive.mkdir(exist_ok=True, parents=True)
     for folder in workfolder.iterdir():
+        if folder.is_symlink():
+            continue
         modified_at = dt.datetime.fromtimestamp(os.path.getmtime(folder))
         if (dt.date.today() - modified_at.date()).days > cutoff_limit:
             folder.rename(workfolder_archive / folder.name)
@@ -70,11 +94,8 @@ def main():
     for folder in workfolder.iterdir():
         if folder == workfolder_today or folder == workfolder_archive:
             continue
-        try:
+        with suppress(OSError):
             folder.rmdir()
-        except OSError:
-            pass
-        else:
             logging.info("Deleted empty folder: %s", folder)
 
     # Create Dir for Today
@@ -82,15 +103,10 @@ def main():
 
     # Create home link
     if args.rel_link:
-        try:
+        with suppress(FileNotFoundError):
             os.unlink(link_workfolder_today)
-        except FileNotFoundError:
-            pass
-        try:
+        with suppress(OSError):
             os.symlink(workfolder_today, link_workfolder_today)
-        except OSError:
-            logging.warning("Failed to create link: %s", link_workfolder_today, exc_info=True)
-        else:
             logging.info("Created link: %s", link_workfolder_today)
 
     # Clean Workfolder
@@ -105,6 +121,12 @@ def main():
         else:
             continue
         shutil.move(str(item), str(workfolder_today))
+
+    # Clean every other folder
+    for folder in clean_folders:
+        for item in folder.glob("*"):
+            shutil.move(str(item), str(workfolder_today))
+        logging.info("Cleaned %r", folder)
 
 
 if __name__ == "__main__":
