@@ -1,15 +1,15 @@
-import os
-import shutil
-import logging
 import argparse
-import datetime as dt
-from pathlib import Path
 from contextlib import suppress
+import datetime as dt
+import logging
+import os
+from pathlib import Path
+import shutil
 
 
 def safe_directory_name(string: str):
     """Checks if a string can be used as a directory name"""
-    safe_characters = {'.', ',', '+', '-', '_', ' '}
+    safe_characters = {".", ",", "+", "-", "_", " "}
     for char in string:
         if not char.isalnum() and char not in safe_characters:
             return False
@@ -17,52 +17,52 @@ def safe_directory_name(string: str):
 
 
 def main():
-    desc = '''Workfolder & Desktop Cleaner\nArchives your desktop files to the 
+    desc = """Workfolder & Desktop Cleaner\nArchives your desktop files to the 
     last day Workfolder, creates a new Workfolder and archives old workfolders 
-    that exceed the cutoff limit.'''
+    that exceed the cutoff limit."""
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument(
         "-workfolder",
         help="Main Workfolder. One subdirectory will be created, in every run.",
         required=True,
-        type=Path
+        type=Path,
     )
     parser.add_argument(
         "-archive",
         help="Archive directory name. Will be a subdirectory of Workfolder. "
-             "Defaults to ARCHIVE.",
+        "Defaults to ARCHIVE.",
         default="ARCHIVE",
-        type=str
+        type=str,
     )
     parser.add_argument(
         "-clean_folders",
         help="Directories that will be cleaned in each run. Contents will be moved to "
-             "daily workfolder.",
+        "daily workfolder.",
         default=[],
-        nargs='*',
-        type=Path
+        nargs="*",
+        type=Path,
     )
     parser.add_argument(
         "-cutoff",
         help="Cutoff limit in days. Any directory with modification date prior "
-             "to this will be moved to archive. "
-             "Defaults to 30 days.",
+        "to this will be moved to archive. "
+        "Defaults to 30 days.",
         default=30,
-        type=int
+        type=int,
     )
     parser.add_argument(
         "-ds_fmt",
         help="Date format for workfolder created directory. Defaults to: "
-             "'%%Y-%%m-%%d'",
+        "'%%Y-%%m-%%d'",
         default="%Y-%m-%d",
-        type=str
+        type=str,
     )
     parser.add_argument(
         "-rel_link",
         help="Will create relative link for today in Workfolder path",
         default=True,
-        type=bool
+        type=bool,
     )
     args = parser.parse_args()
 
@@ -74,11 +74,13 @@ def main():
         raise ValueError(f"Archive folder cannot be named {workfolder_archive!r}")
     workfolder_archive = workfolder / args.archive
     workfolder_today = workfolder / dt.date.today().strftime(ds_fmt)
-    link_workfolder_today = workfolder / 'today'
+    link_workfolder_today = workfolder / "today"
     clean_folders = (folder.expanduser() for folder in args.clean_folders)
 
     # configure logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
     # Archive old folders
     workfolder_archive.mkdir(exist_ok=True, parents=True)
