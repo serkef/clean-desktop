@@ -1,3 +1,6 @@
+""" Script that cleans some folders. Moves everything to a workfolder and
+archives them per day."""
+
 import argparse
 from contextlib import suppress
 import datetime as dt
@@ -17,7 +20,9 @@ def safe_directory_name(string: str):
 
 
 def main():
-    desc = """Workfolder & Desktop Cleaner\nArchives your desktop files to the
+    """ Main function """
+
+    desc = """Workfolder & Desktop Cleaner. Archives your desktop files to the
     last day Workfolder, creates a new Workfolder and archives old workfolders
     that exceed the cutoff limit."""
 
@@ -94,7 +99,7 @@ def main():
 
     # Delete empty folders
     for folder in workfolder.iterdir():
-        if folder == workfolder_today or folder == workfolder_archive:
+        if folder in (workfolder_today, workfolder_archive):
             continue
         with suppress(OSError):
             folder.rmdir()
@@ -113,7 +118,7 @@ def main():
 
     # Clean Workfolder
     for item in workfolder.glob("*"):
-        if item == link_workfolder_today or item == workfolder_archive:
+        if item in (link_workfolder_today, workfolder_archive):
             continue
         # If parse date, then should not move.
         try:
