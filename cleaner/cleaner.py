@@ -2,12 +2,12 @@
 archives them per day."""
 
 import argparse
-from contextlib import suppress
 import datetime as dt
 import logging
 import os
-from pathlib import Path
 import shutil
+from contextlib import suppress
+from pathlib import Path
 
 
 def safe_directory_name(string: str):
@@ -17,6 +17,14 @@ def safe_directory_name(string: str):
         if not char.isalnum() and char not in safe_characters:
             return False
     return True
+
+
+def filter_old_items(path: Path, cutoff_limit: int) -> bool:
+    """ Checks the last modified date of a path and returns True if it's
+    longer than the cutoff_limit """
+
+    modified_at = dt.datetime.fromtimestamp(os.path.getmtime(str(path)))
+    return (dt.date.today() - modified_at.date()).days > cutoff_limit
 
 
 def main():
@@ -89,13 +97,11 @@ def main():
 
     # Archive old folders
     workfolder_archive.mkdir(exist_ok=True, parents=True)
-    for folder in workfolder.iterdir():
+    for folder in filter(filter_old_items, workfolder.iterdir()):
         if folder.is_symlink():
             continue
-        modified_at = dt.datetime.fromtimestamp(os.path.getmtime(folder))
-        if (dt.date.today() - modified_at.date()).days > cutoff_limit:
-            folder.rename(workfolder_archive / folder.name)
-            logging.info("Archived %s to %s", folder, workfolder_archive)
+        folder.rename(workfolder_archive / folder.name)
+        logging.info("Archived %s to %s", folder, workfolder_archive)
 
     # Delete empty folders
     for folder in workfolder.iterdir():
