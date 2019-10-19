@@ -17,8 +17,8 @@ def safe_directory_name(string: str):
 
 
 def main():
-    desc = """Workfolder & Desktop Cleaner\nArchives your desktop files to the 
-    last day Workfolder, creates a new Workfolder and archives old workfolders 
+    desc = """Workfolder & Desktop Cleaner\nArchives your desktop files to the
+    last day Workfolder, creates a new Workfolder and archives old workfolders
     that exceed the cutoff limit."""
 
     parser = argparse.ArgumentParser(description=desc)
