@@ -2,12 +2,12 @@
 archives them per day."""
 
 import argparse
+from contextlib import suppress
 import datetime as dt
 import logging
 import os
-import shutil
-from contextlib import suppress
 from pathlib import Path
+import shutil
 
 
 def safe_directory_name(string: str):
@@ -97,11 +97,10 @@ def main():
 
     # Archive old folders
     workfolder_archive.mkdir(exist_ok=True, parents=True)
-    for folder in filter(filter_old_items, workfolder.iterdir()):
-        if folder.is_symlink():
-            continue
-        folder.rename(workfolder_archive / folder.name)
-        logging.info("Archived %s to %s", folder, workfolder_archive)
+    for folder in workfolder.iterdir():
+        if not folder.is_symlink() and filter_old_items(folder, cutoff_limit):
+            folder.rename(workfolder_archive / folder.name)
+            logging.info("Archived %s to %s", folder, workfolder_archive)
 
     # Delete empty folders
     for folder in workfolder.iterdir():
